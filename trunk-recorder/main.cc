@@ -2,6 +2,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+
 #include <boost/log/trivial.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
@@ -14,6 +15,12 @@
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/attributes/named_scope.hpp>
+#include <boost/log/common.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <boost/log/sinks/text_multifile_backend.hpp>
+
 #include <boost/program_options.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -67,9 +74,17 @@
 
 
 using namespace std;
+
+
 namespace logging = boost::log;
 namespace src     = boost::log::sources;
 namespace sinks   = boost::log::sinks;
+namespace attrs = boost::log::attributes;
+namespace expr = boost::log::expressions;
+namespace keywords = boost::log::keywords;
+
+// Global logger declaration
+BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
 
 std::vector<Source *> sources;
 std::vector<System *> systems;
@@ -1070,11 +1085,46 @@ void add_logs(const F & fmt)
   boost::log::add_console_log(std::clog, boost::log::keywords::format = fmt);
 }
 
+void init_logging()
+{
+  try
+  {
+      // Create a text file sink
+      typedef sinks::synchronous_sink< sinks::text_multifile_backend > file_sink;
+      boost::shared_ptr< file_sink > sink(new file_sink);
+
+      // Set up how the file names will be generated
+      sink->locked_backend()->set_file_name_composer(sinks::file::as_file_name_composer(
+          expr::stream << "logs/" << expr::attr< boost::thread::id >("ThreadID") << ".log"));
+
+      // Set the log record formatter
+      sink->set_formatter
+      (
+          expr::format("%1%: [%2%] - %3%")
+              % expr::attr< unsigned int >("RecordID")
+              % expr::attr< boost::posix_time::ptime >("TimeStamp")
+              % expr::smessage
+      );
+
+      // Add it to the core
+      logging::core::get()->add_sink(sink);
+
+      // Add some attributes too
+      logging::core::get()->add_global_attribute("TimeStamp", attrs::local_clock());
+      logging::core::get()->add_global_attribute("RecordID", attrs::counter< unsigned int >());
+
+  }
+  catch (std::exception& e)
+  {
+      std::cout << "FAILURE: " << e.what() << std::endl;
+  }
+}
+
 int main(int argc, char **argv)
 {
   BOOST_STATIC_ASSERT(true) __attribute__((unused));
   signal(SIGINT, exit_interupt);
-  logging::core::get()->set_filter
+  /*logging::core::get()->set_filter
   (
     logging::trivial::severity >= logging::trivial::info
 
@@ -1095,7 +1145,13 @@ add_logs(
                      attr<boost::log::trivial::severity_level>("Severity")
   % boost::log::expressions::smessage
 );
-
+*/
+init_logging();
+BOOST_LOG_SCOPED_THREAD_TAG("ThreadID", boost::this_thread::get_id());
+for (unsigned int i = 0; i < 5; ++i)
+{
+    BOOST_LOG(my_logger::get()) << "Log record " << i;
+}
 
   boost::program_options::options_description desc("Options");
   desc.add_options()
