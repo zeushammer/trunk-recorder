@@ -1094,8 +1094,11 @@ void init_logging()
       boost::shared_ptr< file_sink > sink(new file_sink);
 
       // Set up how the file names will be generated
-      sink->locked_backend()->set_file_name_composer(sinks::file::as_file_name_composer(
-          expr::stream << "logs/" << expr::attr< boost::thread::id >("ThreadID") << ".log"));
+    /*  sink->locked_backend()->set_file_name_composer(sinks::file::as_file_name_composer(
+          expr::stream << "logs/" << expr::attr< boost::thread::id >("ThreadID") << ".log"));*/
+
+          sink->locked_backend()->set_file_name_composer(sinks::file::as_file_name_composer(
+              expr::stream << "logs/" << expr::attr< std::string >("ShortName") << ".log"));
 
       // Set the log record formatter
       sink->set_formatter

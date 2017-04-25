@@ -15,6 +15,8 @@ std::string System::get_short_name() {
 
 void System::set_short_name(std::string short_name) {
   this->short_name = short_name;
+  log.add_attribute("ShortName", boost::log::attributes::constant<std::string>(short_name));
+  BOOST_LOG(log) << "Test";
 }
 
 std::string System::get_upload_script() {

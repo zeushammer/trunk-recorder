@@ -17,6 +17,7 @@ install_manifest.txt
 recorder
 config.json
 ChanList.csv
+*.log
 *.so
 *.a
 *.dylib

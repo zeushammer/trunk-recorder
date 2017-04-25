@@ -1,6 +1,10 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 #include <stdio.h>
+#include <boost/log/common.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/sources/logger.hpp>
 #include <boost/log/trivial.hpp>
 #include "../talkgroups.h"
 //#include "../source.h"
@@ -21,6 +25,7 @@ class System
         unsigned long sys_id;
         unsigned long wacn;
         unsigned long nac;
+        boost::log::sources::logger log;
 public:
         Talkgroups *talkgroups;
         p25p2_lfsr *lfsr;
